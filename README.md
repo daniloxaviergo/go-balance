@@ -13,6 +13,8 @@ O objetivo é escrever um microserviço que tenha uma performance igual ou melho
 
 Iniciamos com um serviço http usando o go-gin.
 
+# http
+
 ```go
 router.GET("/balance", func(c *gin.Context) {
   action     := c.Query("action")
@@ -215,6 +217,8 @@ proc - 2
 proc - 10
 ```
 
+# lock por account_id
+
 Ao final de cada processo pedimos o saldo das contas
 ```json
 // /balance
@@ -241,6 +245,8 @@ Na comparação entre os dois casos `/balance` e `/balancemx2`
 | 7 | 0.1332333579994156 |  0.1310202719978406 | true |
 | 8 | 0.13328375600394793 | 0.1314919779979391 | true |
 | 9 | 0.13294003200280713 | 0.13293065200559795 | true |
+
+# python vs ruby
 
 Executando o teste no ruby `docker container exec -it blue-whale-exchange-1 bundle exec rails runner macros/runner.rb`
 
@@ -308,7 +314,7 @@ Comparando o tempo de processamento do python com ruby
 | ruby | 48.068 | 48.513 |
 | python | 1.33686 | 1.32097 |
 
-
+# go-balance vs redlock
 
 Script utilizado para testar o redlock
 ```rb
@@ -409,7 +415,8 @@ def test_gobalance(i)
 end
 ```
 
-Comparando o redlock e go-balance
+Comparando o redlock e go-balance.
+Para esse ambiente não tivemos nenhum retry no redlock
 
 | redlock | redis | go-balance |
 | -------- | -------- | -------- |
@@ -420,6 +427,22 @@ irb(main):001:1* 3.times do |account_id|
 irb(main):002:1*   puts Go.exec("balance #{account_id}")
 irb(main):003:0> end
 0.000000 2000
-0.000000 2000                                                               
-0.000000 2000 
+0.000000 2000
+0.000000 2000
 ```
+
+Num ambiente mais agressivo 3 processos com 50 threads
+```py
+#!/usr/bin/xonsh
+
+for i in range(3):
+  docker-compose exec exchange bundle exec rails r ./macros/runner.rb &
+
+```
+
+| redlock | redis | go-balance |
+| -------- | -------- | -------- |
+| 24.297 | 5.960 | 0.936 |
+| 24.504 | 6.044 | 0.936 |
+| 24.523 | 6.045 | 0.936 |
+| **73.324** | **18.049** | **2.8080** |
